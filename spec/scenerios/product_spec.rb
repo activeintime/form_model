@@ -141,6 +141,8 @@ describe "ProductForm" do
     it 'caches the data_models changed attributes' do
       subject.cache_changed
       subject.changed.should == ['title']
+      
+      subject.title_changed?.should == true
     end
   end
   # cache_changed
@@ -154,7 +156,21 @@ describe "ProductForm" do
     it 'caches the data_models changed attributes' do
       subject.cache_changes
       subject.changes.should == {'title' => [nil, 'new title'] }
+      
+      subject.title_changed?.should == true
     end
   end
   # cache_changes
+  
+  describe 'valid?' do
+    
+    it 'should cache the changes' do
+      subject.should_receive(:cache_changes).once
+      subject.should_receive(:cache_changed).once
+      
+      subject.valid?
+    end
+    
+  end
+  # valid?
 end

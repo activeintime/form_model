@@ -36,5 +36,13 @@ class Product
   def errors
     {}
   end
+  
+  def fields
+    { id: id, price: price, name: name, description: description, start_at: start_at }
+  end
+  
+  def relations
+    Relation.new
+  end
 
 end

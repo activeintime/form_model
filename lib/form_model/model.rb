@@ -42,7 +42,8 @@ module FormModel
   def valid?(context = nil)
     return super(context) if !bound_model? || context == :form
     update_data_model!
-    #cache_changes
+    cache_changes
+    cache_changed
     ok = (super(context) and data_model.valid?(context))
     merge_data_model_errors! unless ok
     ok
