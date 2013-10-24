@@ -131,4 +131,30 @@ describe "ProductForm" do
     its(:start_at_hr) {  should eq(split_time.first)}
     its(:start_at_min) { should eq(split_time.last)}
   end
+  
+  describe '#cache_changed' do
+    
+    before do
+      product.title = 'new title'
+    end
+    
+    it 'caches the data_models changed attributes' do
+      subject.cache_changed
+      subject.changed.should == ['title']
+    end
+  end
+  # cache_changed
+  
+  describe '#cache_changes' do
+    
+    before do
+      product.title = 'new title'
+    end
+    
+    it 'caches the data_models changed attributes' do
+      subject.cache_changes
+      subject.changes.should == {'title' => [nil, 'new title'] }
+    end
+  end
+  # cache_changes
 end

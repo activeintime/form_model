@@ -8,6 +8,8 @@ require 'active_support/core_ext/hash/keys'
 module FormModel
   extend ActiveSupport::Concern
   include ActiveModel::Validations
+  
+  attr_reader :changed, :changes
 
   included do
     include Virtus
@@ -40,9 +42,18 @@ module FormModel
   def valid?(context = nil)
     return super(context) if !bound_model? || context == :form
     update_data_model!
+    #cache_changes
     ok = (super(context) and data_model.valid?(context))
     merge_data_model_errors! unless ok
     ok
+  end
+  
+  def cache_changed
+    @changed = data_model.changed
+  end
+  
+  def cache_changes
+    @changes = data_model.changes
   end
 
   def merge_errors_with!(object)
