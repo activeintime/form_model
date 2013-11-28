@@ -1,5 +1,19 @@
 class Product
-  attr_accessor :id, :price, :title, :name, :description, :start_at
+  attr_accessor :id, :price, :name, :description, :start_at
+  
+  include ActiveModel::AttributeMethods
+  include ActiveModel::Dirty
+  
+  define_attribute_methods [:title]
+  
+  def title
+    @title
+  end
+
+  def title=(val)
+    title_will_change! unless val == @title
+    @title = val
+  end
 
   def price
     @price ||= {}
@@ -21,6 +35,14 @@ class Product
 
   def errors
     {}
+  end
+  
+  def fields
+    { id: id, price: price, name: name, description: description, start_at: start_at }
+  end
+  
+  def relations
+    Relation.new
   end
 
 end

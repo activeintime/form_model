@@ -8,6 +8,8 @@ require 'active_support/core_ext/hash/keys'
 module FormModel
   extend ActiveSupport::Concern
   include ActiveModel::Validations
+  
+  attr_reader :changed, :changes
 
   included do
     include Virtus
@@ -15,18 +17,22 @@ module FormModel
     class_attribute :before_write_block
     class_attribute :bound_block
     class_attribute :mappers
+    class_attribute :extra_model_fields
     self.mappers = []
+    self.extra_model_fields = []
 
     attr_accessor :data_model
     alias :model= :data_model=
     alias :model :data_model
 
-    def initialize(model = bound_class.new, attributes = nil)
-      if model.is_a?(Hash)
-        super(model)
+    def initialize(attrs_or_model = bound_class.new, attributes = nil)
+      @given_attributes = {}
+      if attrs_or_model.is_a?(Hash)
+        @given_attributes = attrs_or_model || {}
+        super(attrs_or_model)
       else
         super(attributes)
-        @data_model = model 
+        @data_model = attrs_or_model 
         assert_correct_model
         apply_mappers_to_form!
       end
@@ -36,9 +42,19 @@ module FormModel
   def valid?(context = nil)
     return super(context) if !bound_model? || context == :form
     update_data_model!
+    cache_changes
+    cache_changed
     ok = (super(context) and data_model.valid?(context))
     merge_data_model_errors! unless ok
     ok
+  end
+  
+  def cache_changed
+    @changed = data_model.changed
+  end
+  
+  def cache_changes
+    @changes = data_model.changes
   end
 
   def merge_errors_with!(object)
@@ -62,12 +78,26 @@ module FormModel
   end
 
   def update(attrs = {})
+    @given_attributes = attrs
     self.attributes = attrs || {}
     self
   end
 
+  def given_attributes
+    @given_attributes.with_indifferent_access
+  end
+
+  # useful for embedded forms
+  def update_from_given_attributes
+    self.attributes = data_model.attributes.slice(*form_attributes).merge(given_attributes)
+  end
+
+  def form_attributes
+    self.class.form_attributes
+  end
+
   def persisted?
-    data_model.persisted?
+    data_model ? data_model.persisted? : false
   end
 
   def to_model
@@ -94,7 +124,7 @@ module FormModel
   def update_data_model!
     attrs = attributes.slice(*data_model_attribute_names).stringify_keys
     apply_mappers_to_model!(attrs)
-    self.instance_exec(&before_write_block) unless self.class.before_write_block.nil?
+    self.instance_exec(attrs, &before_write_block) unless self.class.before_write_block.nil?
     data_model.write_attributes(attrs)
     data_model
   end
@@ -153,7 +183,9 @@ module FormModel
 
   def merge_data_model_errors!
     data_model.errors.to_hash.each do |key, value|
-      self.errors.add(key, value)
+      Array(value).flatten.each do |error|
+        self.errors.add(key, error)
+      end
     end
   end
 
@@ -180,6 +212,6 @@ module FormModel
   end
 
   def data_model_attribute_names
-    data_model.fields.keys.map(&:to_sym) + data_model.relations.keys.map(&:to_sym)
+    data_model.fields.keys.map(&:to_sym) + data_model.relations.keys.map(&:to_sym) + extra_model_fields
   end
 end
