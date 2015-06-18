@@ -24,6 +24,6 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency "rspec", "~> 2.11.0"
   gem.add_development_dependency "factory_girl", "~> 4.0.0"
   gem.add_development_dependency "fuubar", "~> 1.0.0"
-  gem.add_development_dependency "activemodel", "~> 3.2.15"
+  #gem.add_development_dependency "activemodel", "~> 3.2.15"
   gem.add_development_dependency 'rake'
 end
